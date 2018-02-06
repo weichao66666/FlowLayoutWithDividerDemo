@@ -103,15 +103,5 @@ public class MainActivity extends AppCompatActivity {
         public int getDividerViewMinMargin() {
             return ViewUtil.dp2px(context, 10);
         }
-
-        @Override
-        public int getDividerViewLeftMargin() {
-            return ViewUtil.dp2px(context, 10);
-        }
-
-        @Override
-        public int getDividerViewRightMargin() {
-            return ViewUtil.dp2px(context, 10);
-        }
     }
 }

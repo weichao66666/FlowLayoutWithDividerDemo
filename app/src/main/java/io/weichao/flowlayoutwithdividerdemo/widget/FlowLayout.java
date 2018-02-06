@@ -44,11 +44,11 @@ public class FlowLayout extends ViewGroup {
     // 测量 child 的宽、高、margin，该方法有可能调用多次
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // 把之前缓存数据全部清空
         if (mFlowLayoutAdapter == null) {
             return;
         }
 
+        // 把之前缓存数据全部清空
         removeAllViews();
         lineList.clear();
         Line line = null;
@@ -71,8 +71,7 @@ public class FlowLayout extends ViewGroup {
         int childCount = getChildCount();
         boolean isLast = false;
         int dividerViewWidth = mFlowLayoutAdapter.getDividerViewWidth();
-        int dividerViewRightMargin = mFlowLayoutAdapter.getDividerViewRightMargin();
-        int dividerViewLeftMargin = mFlowLayoutAdapter.getDividerViewLeftMargin();
+        int dividerViewMinMargin = mFlowLayoutAdapter.getDividerViewMinMargin();
         int rowMargin = mFlowLayoutAdapter.getRowMargin();
         while (index < childCount && !isLast) {
             if (index == childCount - 1) {
@@ -80,6 +79,7 @@ public class FlowLayout extends ViewGroup {
             }
             View child = getChildAt(index);
             if (child.getVisibility() == View.GONE) {
+                index++;
                 continue;
             }
 
@@ -94,14 +94,14 @@ public class FlowLayout extends ViewGroup {
                 Log.d(TAG, "usedWidth: " + dividerViewWidth + "--" + usedWidth);
                 j++;
             }
-            usedWidth += dividerViewRightMargin;
-            Log.d(TAG, "usedWidth: " + dividerViewRightMargin + "--" + usedWidth);
+            usedWidth += dividerViewMinMargin;
+            Log.d(TAG, "usedWidth: " + dividerViewMinMargin + "--" + usedWidth);
             child.measure(childWidthMeasureSpec, childHeightMeasureSpec);// 测量 child
             int childWidth = child.getMeasuredWidth();
             usedWidth += childWidth;
             Log.d(TAG, "usedWidth: " + childWidth + "--" + usedWidth);
-            usedWidth += dividerViewLeftMargin;
-            Log.d(TAG, "usedWidth: " + dividerViewLeftMargin + "--" + usedWidth);
+            usedWidth += dividerViewMinMargin;
+            Log.d(TAG, "usedWidth: " + dividerViewMinMargin + "--" + usedWidth);
             usedWidth += dividerViewWidth;
             Log.d(TAG, "usedWidth: " + dividerViewWidth + "--" + usedWidth);
             if (usedWidth <= widthSize) {
@@ -119,14 +119,14 @@ public class FlowLayout extends ViewGroup {
                 line.addChild(dividerView, dividerViewWidth);
                 usedWidth += dividerViewWidth;
                 Log.d(TAG, "usedWidth: " + dividerViewWidth + "--" + usedWidth);
-                usedWidth += dividerViewRightMargin;
-                Log.d(TAG, "usedWidth: " + dividerViewRightMargin + "--" + usedWidth);
+                usedWidth += dividerViewMinMargin;
+                Log.d(TAG, "usedWidth: " + dividerViewMinMargin + "--" + usedWidth);
                 j++;
                 line.addChild(child, childWidth);
                 usedWidth += childWidth;
                 Log.d(TAG, "usedWidth: " + childWidth + "--" + usedWidth);
-                usedWidth += dividerViewLeftMargin;
-                Log.d(TAG, "usedWidth: " + dividerViewLeftMargin + "--" + usedWidth);
+                usedWidth += dividerViewMinMargin;
+                Log.d(TAG, "usedWidth: " + dividerViewMinMargin + "--" + usedWidth);
                 View dividerView1 = mFlowLayoutAdapter.getDividerView();
                 addView(dividerView1, index + j + 1);
                 line.addChild(dividerView1, dividerViewWidth);
@@ -199,17 +199,12 @@ public class FlowLayout extends ViewGroup {
             int gravityMode = mFlowLayoutAdapter.getGravityMode();
             int dividerViewWidth = mFlowLayoutAdapter.getDividerViewWidth();
             int dividerViewHeight = mFlowLayoutAdapter.getDividerViewHeight();
+            int minMargin = mFlowLayoutAdapter.getDividerViewMinMargin();
             int childListSize = childList.size();
             Log.d(TAG, "width: " + width);
             int marginsWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight() - width;
             Log.d(TAG, "marginsWidth: " + marginsWidth);
             int marginWidth = marginsWidth / (childListSize - 1);
-            int minMargin = mFlowLayoutAdapter.getDividerViewMinMargin();
-            if (gravityMode == FlowLayoutAdapter.GRAVITY_MODE_LEFT) {
-                if (marginWidth < minMargin) {
-                    marginWidth = minMargin;
-                }
-            }
             Log.d(TAG, "marginWidth: " + marginWidth);
             int minRestWidth = minMargin + dividerViewWidth;
             Log.d(TAG, "minRestWidth: " + minRestWidth);
@@ -227,8 +222,8 @@ public class FlowLayout extends ViewGroup {
                 int right;
                 int bottom;
                 if (i % 2 == 0) {// dividerView
-                    if (gravityMode == FlowLayoutAdapter.GRAVITY_MODE_LEFT_AND_RIGHT) {
-                        if (i == childListSize - 1) {
+                    if (i == childListSize - 1) {
+                        if (gravityMode == FlowLayoutAdapter.GRAVITY_MODE_LEFT_AND_RIGHT) {
                             Log.d(TAG, "before leftOffset layout: " + left + "--" + top + "--" + (left + dividerViewWidth) + "--" + (top + height));
                             left += leftOffset;
                         }
@@ -239,22 +234,13 @@ public class FlowLayout extends ViewGroup {
                 } else {// textView
                     realTop = top;
                     int measuredWidth = child.getMeasuredWidth();
-                    if (gravityMode == FlowLayoutAdapter.GRAVITY_MODE_LEFT_AND_RIGHT) {
-                        if (i == 1) {
+                    if (i == 1) {
+                        if (gravityMode == FlowLayoutAdapter.GRAVITY_MODE_LEFT_AND_RIGHT) {
                             Log.d(TAG, "before rightOffset layout: " + left + "--" + top + "--" + (left + measuredWidth) + "--" + (top + height));
                             left += rightOffset;
                         }
                     }
-                    if (left + measuredWidth + marginWidth - 1 > totalWidth - getPaddingRight()) {
-                        Log.d(TAG, (left + measuredWidth + marginWidth - 1) + ">" + (totalWidth - getPaddingRight()));
-                        Log.d(TAG, "for minRestWidth layout: " + left + "--" + top + "--" + (left + measuredWidth + marginWidth - 1) + "--" + (top + height));
-                        right = totalWidth - getPaddingRight() - minRestWidth;
-                        int widthMeasureSpec = MeasureSpec.makeMeasureSpec(measuredWidth - minRestWidth - marginWidth - 1, MeasureSpec.EXACTLY);
-                        int heightMeasureSpec = MeasureSpec.makeMeasureSpec(child.getMeasuredHeight(), MeasureSpec.EXACTLY);
-                        child.measure(widthMeasureSpec, heightMeasureSpec);
-                    } else {
-                        right = left + measuredWidth;
-                    }
+                    right = left + measuredWidth;
                     bottom = top + height;
                 }
                 child.layout(left, realTop, right, bottom);
@@ -313,20 +299,6 @@ public class FlowLayout extends ViewGroup {
 
         public int getGravityMode() {
             return GRAVITY_MODE_LEFT;
-        }
-
-        public int getDividerViewLeftMargin() {
-            if (getGravityMode() == GRAVITY_MODE_LEFT) {
-                return getDividerViewMinMargin();
-            }
-            return 0;
-        }
-
-        public int getDividerViewRightMargin() {
-            if (getGravityMode() == GRAVITY_MODE_LEFT) {
-                return getDividerViewMinMargin();
-            }
-            return 0;
         }
 
         public int getDividerViewMinMargin() {
